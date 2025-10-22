@@ -12,12 +12,11 @@ use axum::{
     serve::Serve,
     Json, Router,
 };
-use domain::AuthAPIError;
 use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
 use routes::*;
 
-use crate::app_state::AppState;
+use crate::{app_state::AppState, domain::AuthAPIError};
 // This struct encapsulates our application-related logic.
 pub struct Application {
     server: Serve<Router, Router>,
