@@ -50,15 +50,19 @@ async fn should_return_401_if_invalid_token() {
 async fn should_return_200_if_valid_jwt_cookie() {
     let app = TestApp::new().await;
 
+    let token = generate_auth_token(&Email::parse("test@example.com").unwrap()).unwrap();
     app.cookie_jar.add_cookie_str(
         &format!(
             "{}={}; HttpOnly; SameSite=Lax; Secure; Path=/",
-            JWT_COOKIE_NAME, generate_auth_token(&Email::parse("test@example.com").unwrap()).unwrap()
+            JWT_COOKIE_NAME, token
         ),
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
 
     let response = app.post_logout().await;
+
+    let banned_token_store = app.banned_token_store.read().await;
+    assert!(banned_token_store.is_banned(&token).await.unwrap());
 
     assert_eq!(response.status().as_u16(), 200);
 }
