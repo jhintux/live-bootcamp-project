@@ -9,10 +9,14 @@ lazy_static! {
 
 
 fn set_token() -> String {
-    dotenv().ok(); // Load environment variables
-    let secret = std_env::var(env::JWT_SECRET_ENV_VAR).expect("JWT_SECRET must be set.");
+    dotenv().ok(); // Load environment variables from .env file (searches up directory tree from current dir)
+    // In Docker, environment variables are set by docker-compose from root .env file
+    let secret = std_env::var(env::JWT_SECRET_ENV_VAR)
+        .unwrap_or_else(|_| {
+            panic!("JWT_SECRET environment variable must be set. Make sure you have JWT_SECRET=... in your root .env file (at project root, not in auth-service/).");
+        });
     if secret.is_empty() {
-        panic!("JWT_SECRET must not be empty.");
+        panic!("JWT_SECRET environment variable must not be empty. Check your root .env file - you may have JWT_SECRET= with no value, or JWT_SECRET_ENV_VAR instead of JWT_SECRET.");
     }
     secret
 }
