@@ -3,7 +3,7 @@ use tokio::sync::RwLock;
 
 use auth_service::{
     app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
-    services::{HashmapUserStore, HashsetBannedTokenStore, HashmapTwoFACodeStore, MockEmailClient},
+    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
     utils::test,
     Application,
 };
@@ -54,7 +54,7 @@ impl TestApp {
             cookie_jar,
             http_client,
             banned_token_store,
-            two_fa_code_store
+            two_fa_code_store,
         }
     }
 
@@ -90,15 +90,13 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_verify_2fa(
-        &self,
-        email: &str,
-        login_attempt_id: &str,
-        two_fa_code: &str,
-    ) -> reqwest::Response {
+    pub async fn post_verify_2fa<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
         self.http_client
             .post(&format!("{}/verify-2fa", &self.address))
-            //.json(&serde_json::json!({ "email": email, "loginAttemptId": login_attempt_id, "2FACode": two_fa_code }))
+            .json(body)
             .send()
             .await
             .expect("Failed to execute request.")

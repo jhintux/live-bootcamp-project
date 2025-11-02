@@ -4,11 +4,11 @@ use uuid::Uuid;
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, String> {
-        if Uuid::parse_str(&id).is_err() {
+    pub fn parse(id: &str) -> Result<Self, String> {
+        if Uuid::parse_str(id).is_err() {
             return Err("Invalid UUID".to_string());
         }
-        Ok(LoginAttemptId(id))
+        Ok(LoginAttemptId(id.to_owned()))
     }
 }
 
