@@ -17,6 +17,8 @@ async fn should_return_400_if_jwt_cookie_missing() {
             .error,
         "Missing token".to_owned()
     );
+    
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -44,6 +46,8 @@ async fn should_return_401_if_invalid_token() {
             .error,
         "Invalid token".to_owned()
     );
+    
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -65,6 +69,8 @@ async fn should_return_200_if_valid_jwt_cookie() {
     assert!(banned_token_store.is_banned(&token).await.unwrap());
 
     assert_eq!(response.status().as_u16(), 200);
+    
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -95,4 +101,6 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
             .error,
         "Missing token".to_owned()
     );
+    
+    app.clean_up().await;
 }

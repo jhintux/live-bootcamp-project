@@ -9,6 +9,8 @@ async fn should_return_422_if_malformed_credentials() {
     let response = app.post_login(&malformed_credential).await;
 
     assert_eq!(response.status().as_u16(), 422, "Failed for input: {:?}", malformed_credential);
+    
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -34,6 +36,8 @@ async fn should_return_400_if_invalid_input() {
             .error,
         "Invalid credentials".to_owned()
     );
+    
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -67,6 +71,8 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+    
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -99,4 +105,6 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let two_fa_code_store = app.two_fa_code_store.read().await;
     let (login_attempt_id, _) = two_fa_code_store.get_code(&Email::parse(&random_email).unwrap()).await.unwrap();
     assert_eq!(json_body.login_attempt_id, login_attempt_id.as_ref());
+    
+    app.clean_up().await;
 }
