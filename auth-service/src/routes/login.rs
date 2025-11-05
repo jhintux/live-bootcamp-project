@@ -85,7 +85,7 @@ async fn handle_2fa(
 }
 
 async fn handle_no_2fa(
-    email: &Email,
+    _email: &Email,
     jar: CookieJar,
 ) -> (
     CookieJar,

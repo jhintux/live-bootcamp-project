@@ -88,7 +88,7 @@ pub struct Claims {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::HashsetBannedTokenStore;
+    use crate::services::data_stores::HashsetBannedTokenStore;
 
     #[tokio::test]
     async fn test_generate_auth_cookie() {
