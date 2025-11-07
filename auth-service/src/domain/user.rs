@@ -1,9 +1,11 @@
 // The User struct should contain 3 fields. email, which is a String; 
 // password, which is also a String; and requires_2fa, which is a boolean. 
 use super::{Email, Password};
-
+use sqlx::{FromRow};
+#[derive(FromRow)]
 pub struct User {
     pub email: Email,
+    #[sqlx(rename = "password_hash")]
     pub password: Password,
     pub requires_2fa: bool,
 }

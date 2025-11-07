@@ -1,6 +1,8 @@
 use validator::validate_email;
+use sqlx::Type;
 
-#[derive(Hash, Eq, PartialEq, Clone)]
+#[derive(Hash, Eq, PartialEq, Clone, Type)]
+#[sqlx(transparent)]
 pub struct Email(String);
 
 impl Email {
