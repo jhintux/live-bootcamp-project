@@ -75,6 +75,10 @@ impl TestApp {
     }
 
     pub async fn clean_up(&self) {
+        if self.clean_up_called.get() {
+            return;
+        }
+
         delete_database(&self.test_db_name).await;
         self.clean_up_called.set(true);
     }
