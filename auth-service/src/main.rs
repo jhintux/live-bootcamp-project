@@ -6,12 +6,15 @@ use auth_service::{
     app_state::AppState,
     get_postgres_pool, get_redis_client,
     services::{MockEmailClient, PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore},
-    utils::{prod, DATABASE_URL, REDIS_HOST_NAME},
+    utils::{prod, DATABASE_URL, REDIS_HOST_NAME, init_tracing},
     Application,
 };
 
 #[tokio::main]
 async fn main() {
+    color_eyre::install().expect("Failed to install color_eyre");
+    init_tracing().expect("Failed to initialize tracing");
+
     let pg_pool = configure_postgresql().await;
     let redis_arc = Arc::new(RwLock::new(configure_redis()));
 

@@ -1,6 +1,6 @@
 use sqlx::Type;
 
-#[derive(Hash, Eq, PartialEq, Type)]
+#[derive(Hash, Eq, PartialEq, Clone, Type)]
 #[sqlx(transparent)]
 pub struct Password(String);
 

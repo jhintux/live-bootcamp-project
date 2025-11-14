@@ -8,6 +8,7 @@ use axum::{
     response::IntoResponse,
 };
 use axum_extra::extract::CookieJar;
+use color_eyre::eyre::eyre;
 use serde::Deserialize;
 
 pub async fn verify_2fa(
@@ -40,12 +41,12 @@ pub async fn verify_2fa(
     }
 
     if two_fa_code_store.remove_code(&email).await.is_err() {
-        return (jar, Err(AuthAPIError::UnexpectedError));
+        return (jar, Err(AuthAPIError::UnexpectedError(eyre!("Failed to remove code"))));
     }
 
     let auth_cookie = match generate_auth_cookie(&email) {
         Ok(cookie) => cookie,
-        Err(_) => return (jar, Err(AuthAPIError::UnexpectedError)),
+        Err(_) => return (jar, Err(AuthAPIError::UnexpectedError(eyre!("Failed to generate auth cookie")))),
     };
 
     let updated_jar = jar.add(auth_cookie);

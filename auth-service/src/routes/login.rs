@@ -1,6 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
+use color_eyre::eyre::eyre;
 
 use crate::{
     app_state::AppState,
@@ -36,7 +37,7 @@ pub async fn login(
 
     let auth_cookie = match generate_auth_cookie(&email) {
         Ok(cookie) => cookie,
-        Err(_) => return (jar, Err(AuthAPIError::UnexpectedError)),
+        Err(_) => return (jar, Err(AuthAPIError::UnexpectedError(eyre!("Failed to generate auth cookie")))),
     };
 
     let updated_jar = jar.add(auth_cookie);
@@ -63,7 +64,7 @@ async fn handle_2fa(
         .add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone())
         .await
     {
-        return (jar, Err(AuthAPIError::UnexpectedError));
+        return (jar, Err(AuthAPIError::UnexpectedError(eyre!("Failed to add code").into())));
     }
 
     if let Err(_) = app_state
@@ -73,7 +74,7 @@ async fn handle_2fa(
         .send_email(email, "2FA Code", &two_fa_code.as_ref())
         .await
     {
-        return (jar, Err(AuthAPIError::UnexpectedError));
+        return (jar, Err(AuthAPIError::UnexpectedError(eyre!("Failed to send email").into())));
     }
 
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
