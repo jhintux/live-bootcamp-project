@@ -1,5 +1,6 @@
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
+use color_eyre::eyre::{eyre, Context, ContextCompat, Result};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
@@ -8,12 +9,14 @@ use crate::domain::{BannedTokenStore, Email};
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 
 // Create cookie with a new JWT auth token
-pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTokenError> {
+#[tracing::instrument(name = "Generating auth cookie", skip_all)]
+pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>> {
     let token = generate_auth_token(email)?;
-    Ok(create_auth_cookie(token))
+    Ok(create_auth_cookie(token.clone()))
 }
 
-// Create cookie and set the value to the passed-in token string 
+// Create cookie and set the value to the passed-in token string
+#[tracing::instrument(name = "Creating auth cookie", skip_all)]
 fn create_auth_cookie(token: String) -> Cookie<'static> {
     let cookie = Cookie::build((JWT_COOKIE_NAME, token))
         .path("/") // apply cookie to all URLs on the server
@@ -34,32 +37,40 @@ pub enum GenerateTokenError {
 pub const TOKEN_TTL_SECONDS: i64 = 600; // 10 minutes
 
 // Create JWT auth token
-pub fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
+#[tracing::instrument(name = "Generating auth token", skip_all)]
+pub fn generate_auth_token(email: &Email) -> Result<String> {
     let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS)
-        .ok_or(GenerateTokenError::UnexpectedError)?;
+        .wrap_err("failed to create 10 minute time delta")?;
 
     // Create JWT expiration time
     let exp = Utc::now()
         .checked_add_signed(delta)
-        .ok_or(GenerateTokenError::UnexpectedError)?
+        .ok_or(eyre!("failed to add 10 minutes to current time"))?
         .timestamp();
 
     // Cast exp to a usize, which is what Claims expects
-    let exp: usize = exp
-        .try_into()
-        .map_err(|_| GenerateTokenError::UnexpectedError)?;
+    let exp: usize = exp.try_into().wrap_err(format!(
+        "failed to cast exp time to usize. exp time: {}",
+        exp
+    ))?;
 
     let sub = email.as_ref().to_owned();
 
     let claims = Claims { sub, exp };
 
-    create_token(&claims).map_err(GenerateTokenError::TokenError)
+    create_token(&claims)
 }
 
 // Check if JWT auth token is valid by decoding it using the JWT secret
-pub async fn validate_token(banned_token_store: &dyn BannedTokenStore, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+#[tracing::instrument(name = "Validating token", skip_all)]
+pub async fn validate_token(
+    banned_token_store: &dyn BannedTokenStore,
+    token: &str,
+) -> Result<Claims, jsonwebtoken::errors::Error> {
     if banned_token_store.is_banned(token).await.unwrap_or(false) {
-        return Err(jsonwebtoken::errors::Error::from(jsonwebtoken::errors::ErrorKind::InvalidToken));
+        return Err(jsonwebtoken::errors::Error::from(
+            jsonwebtoken::errors::ErrorKind::InvalidToken,
+        ));
     }
 
     decode::<Claims>(
@@ -71,12 +82,14 @@ pub async fn validate_token(banned_token_store: &dyn BannedTokenStore, token: &s
 }
 
 // Create JWT auth token by encoding claims using the JWT secret
-fn create_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
+#[tracing::instrument(name = "Creating token", skip_all)]
+fn create_token(claims: &Claims) -> Result<String> {
     encode(
         &jsonwebtoken::Header::default(),
         &claims,
         &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
     )
+    .wrap_err("failed to create token")
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -149,7 +162,10 @@ mod tests {
         let email = Email::parse("test@example.com").unwrap();
         let token = generate_auth_token(&email).unwrap();
         let mut banned_token_store = HashsetBannedTokenStore::default();
-        banned_token_store.add_banned_token(token.clone()).await.unwrap();
+        banned_token_store
+            .add_banned_token(token.clone())
+            .await
+            .unwrap();
 
         let result = validate_token(&banned_token_store, &token).await;
         assert!(result.is_err());

@@ -29,13 +29,12 @@ impl TestApp {
     pub async fn new() -> Self {
         let (pg_pool, db_name) = configure_postgresql().await;
         let redis_client = get_redis_client(REDIS_HOST_NAME.to_owned()).unwrap();
-        let redis_conn = redis_client
-            .get_connection()
-            .unwrap();
+        let redis_conn = redis_client.get_connection().unwrap();
         let redis_arc = Arc::new(RwLock::new(redis_conn));
 
         let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
-        let banned_token_store = Arc::new(RwLock::new(RedisBannedTokenStore::new(redis_arc.clone())));
+        let banned_token_store =
+            Arc::new(RwLock::new(RedisBannedTokenStore::new(redis_arc.clone())));
         let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_arc)));
         let email_client = Arc::new(RwLock::new(MockEmailClient::default()));
 

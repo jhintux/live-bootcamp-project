@@ -3,7 +3,6 @@ use serde::{Deserialize,Serialize};
 
 use crate::{app_state::AppState, domain::{AuthAPIError, Email, Password, User}};
 
-#[tracing::instrument(name = "Signup", skip_all)]
 pub async fn signup(
     State(app_state): State<AppState>, 
     Json(request): Json<SignupRequest>
@@ -14,13 +13,12 @@ pub async fn signup(
     let user = User::new(email, password, request.requires_2fa);
     let mut user_store = app_state.user_store.write().await;
 
-    if let Err(e) = user_store.add_user(user).await {
-        return Err(AuthAPIError::UnexpectedError(e.into())); // Updated!
+    match user_store.add_user(user).await {
+        Ok(_) => Ok((StatusCode::CREATED, Json(SignupResponse {
+            message: "User created successfully!".to_string(),
+        }))),
+        Err(_) => Err(AuthAPIError::UserAlreadyExists),
     }
-
-    Ok((StatusCode::CREATED, Json(SignupResponse {
-        message: "User created successfully!".to_string(),
-    })))
 }
 
 #[derive(Deserialize)]
