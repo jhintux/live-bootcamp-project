@@ -1,5 +1,5 @@
 use auth_service::{domain::Email, routes::TwoFactorAuthResponse, utils::JWT_COOKIE_NAME};
-
+use secrecy::{ExposeSecret, Secret};
 use crate::helpers::{TestApp, get_random_email};
 
 #[tokio::test]
@@ -106,14 +106,14 @@ async fn should_return_200_if_correct_code() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(&random_email).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await
         .unwrap();
 
     let verify_2fa_body = serde_json::json!({
         "email": random_email,
         "login_attempt_id": login_attempt_id,
-        "2FACode": code_tuple.1.as_ref()
+        "2FACode": code_tuple.1.as_ref().expose_secret()
     });
     
     let response = app.post_verify_2fa(&verify_2fa_body).await;
@@ -154,13 +154,13 @@ async fn should_return_401_if_same_code_twice() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(&random_email).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await.unwrap();
 
     let verify_2fa_body = serde_json::json!({
         "email": random_email,
         "login_attempt_id": login_attempt_id,
-        "2FACode": code_tuple.1.as_ref()
+        "2FACode": code_tuple.1.as_ref().expose_secret()
     });
     
     let response = app.post_verify_2fa(&verify_2fa_body).await;

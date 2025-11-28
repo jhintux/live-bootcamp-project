@@ -1,4 +1,5 @@
 use color_eyre::eyre::Report;
+use secrecy::Secret;
 use thiserror::Error;
 
 use crate::domain::{LoginAttemptId, TwoFACode};
@@ -14,8 +15,8 @@ pub trait UserStore: Send + Sync {
 
 #[async_trait::async_trait]
 pub trait BannedTokenStore: Send + Sync {
-    async fn add_banned_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
-    async fn is_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn add_banned_token(&mut self, token: Secret<String>) -> Result<(), BannedTokenStoreError>;
+    async fn is_banned(&self, token: &Secret<String>) -> Result<bool, BannedTokenStoreError>;
 }
 
 // This trait represents the interface all concrete 2FA code stores should implement

@@ -28,11 +28,12 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use secrecy::Secret;
 
     #[tokio::test]
     async fn test_add_code() {
         let mut two_fa_code_store = HashmapTwoFACodeStore::default();
-        let email = Email::parse("test@test.com").unwrap();
+        let email = Email::parse(Secret::new("test@test.com".to_string())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
         two_fa_code_store.add_code(email, login_attempt_id, code).await.unwrap();
@@ -41,7 +42,7 @@ mod tests {
     #[tokio::test]
     async fn test_remove_code() {
         let mut two_fa_code_store = HashmapTwoFACodeStore::default();
-        let email = Email::parse("test@test.com").unwrap();
+        let email = Email::parse(Secret::new("test@test.com".to_string())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
         two_fa_code_store.add_code(email.clone(), login_attempt_id, code).await.unwrap();
@@ -52,7 +53,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_code() {
         let mut two_fa_code_store = HashmapTwoFACodeStore::default();
-        let email = Email::parse("test@test.com").unwrap();
+        let email = Email::parse(Secret::new("test@test.com".to_string())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
         two_fa_code_store.add_code(email.clone(), login_attempt_id, code).await.unwrap();

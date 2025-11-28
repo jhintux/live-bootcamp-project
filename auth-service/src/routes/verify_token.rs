@@ -1,4 +1,5 @@
 use axum::{extract::{Json, State}, http::StatusCode, response::IntoResponse};
+use secrecy::Secret;
 
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +10,7 @@ pub async fn verify_token(
     body: Json<VerifyTokenBody>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let banned_token_store = app_state.banned_token_store.read().await;
-    match validate_token(&*banned_token_store, &body.token).await {
+    match validate_token(&*banned_token_store, &Secret::new(body.token.clone())).await {
         Ok(_) => Ok(StatusCode::OK),
         Err(_) => Err(AuthAPIError::InvalidToken),
     }

@@ -1,6 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::CookieJar;
 use color_eyre::eyre::Result;
+use secrecy::Secret;
 
 use crate::{
     app_state::AppState, domain::AuthAPIError, utils::{validate_token, JWT_COOKIE_NAME}
@@ -26,13 +27,13 @@ pub async fn logout(
     let mut banned_token_store = app_state.banned_token_store.write().await;
     
     // Validate JWT token structure, expiration, and banned status
-    match validate_token(&*banned_token_store, &token).await {
+    match validate_token(&*banned_token_store, &Secret::new(token.clone())).await {
         Ok(_) => (),
         Err(_) => return (jar, Err(AuthAPIError::InvalidToken)),
     }
     
     // Add token to banned list
-    match banned_token_store.add_banned_token(token).await {
+    match banned_token_store.add_banned_token(Secret::new(token)).await {
         Ok(_) => (),
         Err(e) => return (jar, Err(AuthAPIError::UnexpectedError(e.into()))),
     }

@@ -10,6 +10,7 @@ use axum::{
 use axum_extra::extract::CookieJar;
 use color_eyre::eyre::Result;
 use serde::Deserialize;
+use secrecy::Secret;
 
 #[tracing::instrument(name = "Verify 2FA", skip_all)]
 pub async fn verify_2fa(
@@ -17,7 +18,7 @@ pub async fn verify_2fa(
     jar: CookieJar,
     Json(request): Json<Verify2FARequest>,
 ) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
-    let email = match Email::parse(&request.email) {
+    let email = match Email::parse(request.email) {
         Ok(email) => email,
         Err(_) => return (jar, Err(AuthAPIError::InvalidCredentials)),
     };
@@ -58,7 +59,7 @@ pub async fn verify_2fa(
 
 #[derive(Deserialize)]
 pub struct Verify2FARequest {
-    pub email: String,
+    pub email: Secret<String>,
     pub login_attempt_id: String,
     #[serde(rename = "2FACode")]
     pub two_fa_code: String,

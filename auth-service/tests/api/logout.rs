@@ -1,5 +1,6 @@
 use auth_service::{domain::Email, utils::{JWT_COOKIE_NAME, generate_auth_token}, ErrorResponse};
 use reqwest::Url;
+use secrecy::{ExposeSecret, Secret};
 
 use crate::helpers::TestApp;
 
@@ -54,11 +55,11 @@ async fn should_return_401_if_invalid_token() {
 async fn should_return_200_if_valid_jwt_cookie() {
     let app = TestApp::new().await;
 
-    let token = generate_auth_token(&Email::parse("test@example.com").unwrap()).unwrap();
+    let token = generate_auth_token(&Email::parse(Secret::new("test@example.com".to_string())).unwrap()).unwrap();
     app.cookie_jar.add_cookie_str(
         &format!(
             "{}={}; HttpOnly; SameSite=Lax; Secure; Path=/",
-            JWT_COOKIE_NAME, token
+            JWT_COOKIE_NAME, token.expose_secret().to_owned()
         ),
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
@@ -81,7 +82,7 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
     app.cookie_jar.add_cookie_str(
         &format!(
             "{}={}; HttpOnly; SameSite=Lax; Secure; Path=/",
-            JWT_COOKIE_NAME, generate_auth_token(&Email::parse("test@example.com").unwrap()).unwrap()
+            JWT_COOKIE_NAME, generate_auth_token(&Email::parse(Secret::new("test@example.com".to_string())).unwrap()).unwrap().expose_secret()
         ),
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );

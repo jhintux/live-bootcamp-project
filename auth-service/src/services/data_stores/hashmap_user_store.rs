@@ -41,13 +41,14 @@ impl UserStore for HashmapUserStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use secrecy::Secret;
 
     #[tokio::test]
     async fn test_add_user() {
         let mut user_store = HashmapUserStore::default();
         let user = User::new(
-            Email::parse("test@test.com").unwrap(),
-            Password::parse("password").unwrap(),
+            Email::parse(Secret::new("test@test.com".to_string())).unwrap(),
+            Password::parse(Secret::new("password".to_string())).unwrap(),
             false,
         );
         user_store.add_user(user).await.unwrap();
@@ -57,13 +58,13 @@ mod tests {
     async fn test_get_user() {
         let mut user_store = HashmapUserStore::default();
         let user = User::new(
-            Email::parse("test@test.com").unwrap(),
-            Password::parse("password").unwrap(),
+            Email::parse(Secret::new("test@test.com".to_string())).unwrap(),
+            Password::parse(Secret::new("password".to_string())).unwrap(),
             false,
         );
         user_store.add_user(user).await.unwrap();
         user_store
-            .get_user(&Email::parse("test@test.com").unwrap())
+            .get_user(&Email::parse(Secret::new("test@test.com".to_string())).unwrap())
             .await
             .unwrap();
     }
@@ -72,15 +73,15 @@ mod tests {
     async fn test_validate_user() {
         let mut user_store = HashmapUserStore::default();
         let user = User::new(
-            Email::parse("test@test.com").unwrap(),
-            Password::parse("password").unwrap(),
+            Email::parse(Secret::new("test@test.com".to_string())).unwrap(),
+            Password::parse(Secret::new("password".to_string())).unwrap(),
             false,
         );
         user_store.add_user(user).await.unwrap();
         user_store
             .validate_user(
-                &Email::parse("test@test.com").unwrap(),
-                &Password::parse("password").unwrap(),
+                &Email::parse(Secret::new("test@test.com".to_string())).unwrap(),
+                &Password::parse(Secret::new("password".to_string())).unwrap(),
             )
             .await
             .unwrap();
